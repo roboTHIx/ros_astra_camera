@@ -187,7 +187,7 @@ void AstraDriver::advertiseROSTopics()
     //image_transport::SubscriberStatusCallback itssc = boost::bind(&AstraDriver::colorConnectCb, this);
     //ros::SubscriberStatusCallback rssc = boost::bind(&AstraDriver::colorConnectCb, this);
     //pub_color_ = color_it.advertiseCamera("image", 1, itssc, itssc, rssc, rssc);
-    pub_color_ = nh_->create_publisher<sensor_msgs::msg::Image>("image", rmw_qos_profile_sensor_data);
+    pub_color_ = nh_->create_publisher<sensor_msgs::msg::Image>("image", rclcpp::QoS(rclcpp::KeepLast(5), rmw_qos_profile_sensor_data));
     this->colorConnectCb();
   }
 
@@ -196,7 +196,7 @@ void AstraDriver::advertiseROSTopics()
     //image_transport::SubscriberStatusCallback itssc = boost::bind(&AstraDriver::irConnectCb, this);
     //ros::SubscriberStatusCallback rssc = boost::bind(&AstraDriver::irConnectCb, this);
     //pub_ir_ = ir_it.advertiseCamera("image", 1, itssc, itssc, rssc, rssc);
-    pub_ir_ = nh_->create_publisher<sensor_msgs::msg::Image>("ir_image", rmw_qos_profile_sensor_data);
+    pub_ir_ = nh_->create_publisher<sensor_msgs::msg::Image>("ir_image", rclcpp::QoS(rclcpp::KeepLast(5), rmw_qos_profile_sensor_data));
     this->irConnectCb();
   }
 
@@ -207,8 +207,8 @@ void AstraDriver::advertiseROSTopics()
     //ros::SubscriberStatusCallback rssc = boost::bind(&AstraDriver::depthConnectCb, this);
     //pub_depth_raw_ = depth_it.advertiseCamera("image_raw", 1, itssc, itssc, rssc, rssc);
     //pub_depth_ = depth_raw_it.advertiseCamera("image", 1, itssc, itssc, rssc, rssc);
-    pub_depth_raw_ = nh_->create_publisher<sensor_msgs::msg::Image>("depth", rmw_qos_profile_sensor_data);
-    pub_depth_camera_info_ = nh_->create_publisher<sensor_msgs::msg::CameraInfo>("depth_camera_info", rmw_qos_profile_sensor_data);
+    pub_depth_raw_ = nh_->create_publisher<sensor_msgs::msg::Image>("depth", rclcpp::QoS(rclcpp::KeepLast(5), rmw_qos_profile_sensor_data));
+    pub_depth_camera_info_ = nh_->create_publisher<sensor_msgs::msg::CameraInfo>("depth_camera_info", rclcpp::QoS(rclcpp::KeepLast(5), rmw_qos_profile_sensor_data));
     this->depthConnectCb();
   }
 
@@ -539,7 +539,7 @@ void AstraDriver::newIRFrameCallback(sensor_msgs::msg::Image::SharedPtr image)
       //image->header.stamp = image->header.stamp + ir_time_offset_;
 
       //pub_ir_.publish(image, getIRCameraInfo(image->width, image->height, image->header.stamp));
-      pub_ir_->publish(image);
+      pub_ir_->publish(*image);
     }
   }
 }
@@ -556,7 +556,7 @@ void AstraDriver::newColorFrameCallback(sensor_msgs::msg::Image::SharedPtr image
       //image->header.stamp = image->header.stamp + color_time_offset_;
 
       //pub_color_.publish(image, getColorCameraInfo(image->width, image->height, image->header.stamp));
-      pub_color_->publish(image);
+      pub_color_->publish(*image);
     }
   }
 }
@@ -607,7 +607,7 @@ void AstraDriver::newDepthFrameCallback(sensor_msgs::msg::Image::SharedPtr image
       else
       {
         image->header.frame_id = depth_frame_id_;
-        cam_info = getDepthCameraInfo(image->width,image->height, image->header.stamp);
+        cam_info = getDepthCameraInfo(image->width, image->height, image->header.stamp);
       }
 
       //if (depth_raw_subscribers_)
@@ -620,8 +620,8 @@ void AstraDriver::newDepthFrameCallback(sensor_msgs::msg::Image::SharedPtr image
       {
         sensor_msgs::msg::Image::SharedPtr floating_point_image = rawToFloatingPointConversion(image);
         //pub_depth_.publish(floating_point_image, cam_info);
-        pub_depth_raw_->publish(floating_point_image);
-        pub_depth_camera_info_->publish(getDepthCameraInfo(image->width, image->height, image->header.stamp));
+        pub_depth_raw_->publish(*floating_point_image);
+        pub_depth_camera_info_->publish(*cam_info);
       }
     }
   }
