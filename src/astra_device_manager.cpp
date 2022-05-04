@@ -51,7 +51,7 @@ namespace astra_wrapper
 class AstraDeviceInfoComparator
 {
 public:
-  bool operator()(const AstraDeviceInfo& di1, const AstraDeviceInfo& di2)
+  bool operator()(const AstraDeviceInfo& di1, const AstraDeviceInfo& di2) const
   {
     return (di1.uri_.compare(di2.uri_) < 0);
   }

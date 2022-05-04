@@ -807,7 +807,7 @@ void AstraDriver::readConfigFromParameterServer()
 
 }
 
-std::string AstraDriver::resolveDeviceURI(const std::string& device_id) throw(AstraException)
+std::string AstraDriver::resolveDeviceURI(const std::string& device_id)// throw(AstraException)
 {
   // retrieve available device URIs, they look like this: "1d27/0601@1/5"
   // which is <vendor ID>/<product ID>@<bus number>/<device number>
