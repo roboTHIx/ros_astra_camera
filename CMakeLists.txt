@@ -120,6 +120,10 @@ install(PROGRAMS scripts/create_udev_rules
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+
+
 ament_export_include_directories(include)
 ament_export_libraries(astra_driver_lib astra_wrapper)
 ament_package()
