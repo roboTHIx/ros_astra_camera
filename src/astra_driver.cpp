@@ -982,7 +982,10 @@ void AstraDriver::initDevice()
     ROS_DEBUG("Waiting for device initialization..");
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   }
-
+  
+  //hack -> disable auto exposure
+  device_->setAutoExposure(false);
+  device_->setAutoWhiteBalance(false);
 }
 
 void AstraDriver::genVideoModeTableMap()
