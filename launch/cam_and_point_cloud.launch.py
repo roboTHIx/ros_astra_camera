@@ -14,6 +14,10 @@ def generate_launch_description():
             executable='astra_camera_node',
             name='astra_camera_node',
             output='screen',
+            parameters=[{
+              "auto_exposure" : True,
+              "auto_white_balance" : True
+            }],
             remappings=[('depth',             '/camera/depth/image'),
                         ('depth_camera_info', '/camera/depth/camera_info'),
                         ('image',             '/camera/rgb/image')]

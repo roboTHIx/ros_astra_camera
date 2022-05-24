@@ -220,6 +220,25 @@ void AstraDriver::advertiseROSTopics()
   //param_nh.param("depth_ir_offset_x", depth_ir_offset_x_, 5.0);
   //param_nh.param("depth_ir_offset_y", depth_ir_offset_y_, 4.0);
 
+  //ros2 parameters
+  nh_->declare_parameter<bool>("auto_exposure", auto_exposure_);
+  nh_->declare_parameter<bool>("auto_white_balance", auto_white_balance_);
+
+  auto_exposure_ = nh_->get_parameter("auto_exposure").as_bool();
+  auto_white_balance_ = nh_->get_parameter("auto_white_balance").as_bool();
+
+  RCLCPP_INFO(nh_->get_logger(), "################################################################");
+  RCLCPP_INFO(nh_->get_logger(), "# ros_astra_camera parameters: #");
+  RCLCPP_INFO(nh_->get_logger(), "################################");
+  RCLCPP_INFO(nh_->get_logger(), "auto_exposure: %s", auto_exposure_ ? "true" : "false");
+  RCLCPP_INFO(nh_->get_logger(), "auto_white_balance: %s", auto_white_balance_ ? "true" : "false");
+  RCLCPP_INFO(nh_->get_logger(), "################################################################");
+
+
+  //hack -> disable auto exposure
+  device_->setAutoExposure(false);
+  device_->setAutoWhiteBalance(false);
+
   // The camera names are set to [rgb|depth]_[serial#], e.g. depth_B00367707227042B.
   // camera_info_manager substitutes this for ${NAME} in the URL.
   std::string serial_number = device_->getStringID();
@@ -983,9 +1002,7 @@ void AstraDriver::initDevice()
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   }
   
-  //hack -> disable auto exposure
-  device_->setAutoExposure(false);
-  device_->setAutoWhiteBalance(false);
+
 }
 
 void AstraDriver::genVideoModeTableMap()
