@@ -263,7 +263,11 @@ boost::shared_ptr<AstraDevice> AstraDeviceManager::getDeviceBySerial(const std::
       return boost::make_shared<AstraDevice>(uri);
   }
   std::cout << "given Serial not found -> return any device" << std::endl;
-  return getAnyDevice();
+  // ::exit(EXIT_FAILURE);
+  boost::shared_ptr<AstraDevice> ret;
+  ret.reset();
+  return ret;
+  // return getAnyDevice();
 }
 
 std::ostream& operator << (std::ostream& stream, const AstraDeviceManager& device_manager) {

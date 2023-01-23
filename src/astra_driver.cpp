@@ -73,12 +73,7 @@ AstraDriver::AstraDriver(rclcpp::Node::SharedPtr& n, rclcpp::Node::SharedPtr& pn
 
   // readConfigFromParameterServer();
   
-  auto device_list = device_manager_->getConnectedDeviceURIs();
-  for(const auto& e : *device_list)
-  {
-    auto serial = device_manager_->getSerial(e);
-    RCLCPP_INFO(nh_->get_logger(), "Found deviceSerial: %s", serial.c_str());
-  }
+
 
     //ros2 parameters
   nh_->declare_parameter<std::string>("serial", device_id_);
@@ -102,6 +97,24 @@ AstraDriver::AstraDriver(rclcpp::Node::SharedPtr& n, rclcpp::Node::SharedPtr& pn
   RCLCPP_INFO(nh_->get_logger(), "depth_frame_id: %s", depth_frame_id_.c_str());
   RCLCPP_INFO(nh_->get_logger(), "color_frame_id: %s", color_frame_id_.c_str());
   RCLCPP_INFO(nh_->get_logger(), "################################################################");
+
+  bool found = false;
+  while(!found)
+  {
+    auto device_list = device_manager_->getConnectedDeviceURIs();
+    for(const auto& e : *device_list)
+    {
+      auto tmp_serial = device_manager_->getSerial(e);
+      RCLCPP_INFO(nh_->get_logger(), "Found deviceSerial: %s", tmp_serial.c_str());
+      if(tmp_serial == serial)
+      {
+        RCLCPP_INFO(nh_->get_logger(), "Found Matching Serial: %s", tmp_serial.c_str());
+        found = true;
+      }
+    }
+    boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+  }
+
 
 #if MULTI_ASTRA
 	int bootOrder, devnums;
@@ -997,6 +1010,8 @@ void AstraDriver::initDevice(const std::string& serial)
         	boost::this_thread::sleep(boost::posix_time::milliseconds(500));
         	continue;
         }
+
+        ROS_INFO("####Found matching device: %s", device_manager_->getSerial(device_->getUri()).c_str());
       }
       else
       {
