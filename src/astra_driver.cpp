@@ -71,7 +71,37 @@ AstraDriver::AstraDriver(rclcpp::Node::SharedPtr& n, rclcpp::Node::SharedPtr& pn
 
   genVideoModeTableMap();
 
-  readConfigFromParameterServer();
+  // readConfigFromParameterServer();
+  
+  auto device_list = device_manager_->getConnectedDeviceURIs();
+  for(const auto& e : *device_list)
+  {
+    auto serial = device_manager_->getSerial(e);
+    RCLCPP_INFO(nh_->get_logger(), "Found deviceSerial: %s", serial.c_str());
+  }
+
+    //ros2 parameters
+  nh_->declare_parameter<std::string>("serial", device_id_);
+  nh_->declare_parameter<bool>("auto_exposure", auto_exposure_);
+  nh_->declare_parameter<bool>("auto_white_balance", auto_white_balance_);
+  nh_->declare_parameter<std::string>("depth_frame_id", depth_frame_id_);
+  nh_->declare_parameter<std::string>("color_frame_id", color_frame_id_);
+
+  auto_exposure_ = nh_->get_parameter("auto_exposure").as_bool();
+  auto_white_balance_ = nh_->get_parameter("auto_white_balance").as_bool();
+  auto serial = nh_->get_parameter("serial").as_string();
+  depth_frame_id_ = nh_->get_parameter("depth_frame_id").as_string();
+  color_frame_id_ = nh_->get_parameter("color_frame_id").as_string();
+
+  RCLCPP_INFO(nh_->get_logger(), "################################################################");
+  RCLCPP_INFO(nh_->get_logger(), "# ros_astra_camera parameters: #");
+  RCLCPP_INFO(nh_->get_logger(), "################################");
+  RCLCPP_INFO(nh_->get_logger(), "auto_exposure: %s", auto_exposure_ ? "true" : "false");
+  RCLCPP_INFO(nh_->get_logger(), "auto_white_balance: %s", auto_white_balance_ ? "true" : "false");
+  RCLCPP_INFO(nh_->get_logger(), "serial: %s", serial.c_str());
+  RCLCPP_INFO(nh_->get_logger(), "depth_frame_id: %s", depth_frame_id_.c_str());
+  RCLCPP_INFO(nh_->get_logger(), "color_frame_id: %s", color_frame_id_.c_str());
+  RCLCPP_INFO(nh_->get_logger(), "################################################################");
 
 #if MULTI_ASTRA
 	int bootOrder, devnums;
@@ -91,7 +121,7 @@ AstraDriver::AstraDriver(rclcpp::Node::SharedPtr& n, rclcpp::Node::SharedPtr& pn
 			}
 			shm = (char *)shmat(shmid, 0, 0);  
 			*shm = 1;
-			initDevice();
+			initDevice(serial);
 			ROS_WARN("*********** device_id %s already open device************************ ", device_id_.c_str());
 			*shm = 2;
 		}
@@ -103,7 +133,7 @@ AstraDriver::AstraDriver(rclcpp::Node::SharedPtr& n, rclcpp::Node::SharedPtr& pn
 			}
 			shm = (char *)shmat(shmid, 0, 0);
 			while( *shm!=bootOrder);
-			initDevice();
+			initDevice(serial);
 			ROS_WARN("*********** device_id %s already open device************************ ", device_id_.c_str());
 			*shm = (bootOrder+1);
 		}
@@ -129,10 +159,10 @@ AstraDriver::AstraDriver(rclcpp::Node::SharedPtr& n, rclcpp::Node::SharedPtr& pn
 	 }
 	 else
 	 {
-	 	initDevice();
+	 	initDevice(serial);
 	 }
 #else
-  initDevice();
+  initDevice(serial);
 
 #endif
   // Initialize dynamic reconfigure
@@ -220,19 +250,7 @@ void AstraDriver::advertiseROSTopics()
   //param_nh.param("depth_ir_offset_x", depth_ir_offset_x_, 5.0);
   //param_nh.param("depth_ir_offset_y", depth_ir_offset_y_, 4.0);
 
-  //ros2 parameters
-  nh_->declare_parameter<bool>("auto_exposure", auto_exposure_);
-  nh_->declare_parameter<bool>("auto_white_balance", auto_white_balance_);
 
-  auto_exposure_ = nh_->get_parameter("auto_exposure").as_bool();
-  auto_white_balance_ = nh_->get_parameter("auto_white_balance").as_bool();
-
-  RCLCPP_INFO(nh_->get_logger(), "################################################################");
-  RCLCPP_INFO(nh_->get_logger(), "# ros_astra_camera parameters: #");
-  RCLCPP_INFO(nh_->get_logger(), "################################");
-  RCLCPP_INFO(nh_->get_logger(), "auto_exposure: %s", auto_exposure_ ? "true" : "false");
-  RCLCPP_INFO(nh_->get_logger(), "auto_white_balance: %s", auto_white_balance_ ? "true" : "false");
-  RCLCPP_INFO(nh_->get_logger(), "################################################################");
 
 
   //hack -> disable auto exposure
@@ -964,21 +982,34 @@ std::string AstraDriver::resolveDeviceURI(const std::string& device_id)// throw(
   return "INVALID";
 }
 
-void AstraDriver::initDevice()
+void AstraDriver::initDevice(const std::string& serial)
 {
   while (rclcpp::ok() && !device_)
   {
     try
     {
-      std::string device_URI = resolveDeviceURI(device_id_);
-      #if 0
-      if( device_URI == "" ) 
+      if(!serial.empty())
       {
-      	boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-      	continue;
+        device_= device_manager_->getDeviceBySerial(serial);
+        if(!device_)
+        {
+          ROS_INFO("No matching device found.... waiting for devices");
+        	boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+        	continue;
+        }
       }
-      #endif
-      device_ = device_manager_->getDevice(device_URI);
+      else
+      {
+        std::string device_URI = resolveDeviceURI(device_id_);
+        #if 0
+        if( device_URI == "" ) 
+        {
+        	boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+        	continue;
+        }
+        #endif
+        device_ = device_manager_->getDevice(device_URI);
+      }
     }
     catch (const AstraException& exception)
     {

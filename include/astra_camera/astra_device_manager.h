@@ -61,6 +61,7 @@ public:
 
   boost::shared_ptr<AstraDevice> getAnyDevice();
   boost::shared_ptr<AstraDevice> getDevice(const std::string& device_URI);
+  boost::shared_ptr<AstraDevice> getDeviceBySerial(const std::string& serial);
 
   std::string getSerial(const std::string& device_URI) const;
 
